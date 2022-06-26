@@ -1,2 +1,2 @@
-# sage
-Discord bot for our validator tooling
+#sage
+`Discord bot for our validator tooling`
