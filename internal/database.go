@@ -51,3 +51,15 @@ func (d *Database) GetLatestBlock(chain string) string {
 	}
 	return "N/A"
 }
+
+func (d *Database) GetLatestStatus(chain string) interface{} {
+	log.Debug().Str("chain", chain).Msg("Calling Database.GetLatestStatus")
+	for k, v := range d.data {
+		log.Debug().Str("key", k).Str("chain", chain).Msg("....comparing")
+		if k == chain {
+			log.Debug().Str("key", k).Str("chain", chain).Msg("........match!")
+			return v.info.Result
+		}
+	}
+	return "N/A"
+}

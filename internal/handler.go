@@ -110,6 +110,7 @@ func sendStatus(sage *Sage, s *discordgo.Session, m *discordgo.MessageCreate) {
 	log.Debug().Msg("Calling sendStatus")
 
 	t, err := template.New("status").Parse(status)
+	tdata := make([]map[string]interface{}, 0)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to parse template")
 		sendError(s, m, err.Error())
@@ -119,12 +120,15 @@ func sendStatus(sage *Sage, s *discordgo.Session, m *discordgo.MessageCreate) {
 	var tpl bytes.Buffer
 	chains := sage.blockChainManager.GetChains()
 
-	for i, c := range chains {
-		bh := sage.db.GetLatestBlock(c.ID)
-		chains[i].LatestBlock = bh
+	for _, c := range chains {
+		tdata = append(tdata, map[string]interface{}{
+			"data":        c,
+			"latestBlock": sage.db.GetLatestBlock(c.ID),
+			"sync":        sage.db.GetLatestStatus(c.ID),
+		})
 	}
 
-	err = t.Execute(&tpl, chains)
+	err = t.Execute(&tpl, tdata)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to execute template")
 		sendError(s, m, err.Error())
