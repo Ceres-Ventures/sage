@@ -6,14 +6,16 @@ import (
 
 	"github.com/Entrio/subenv"
 	"github.com/bwmarrin/discordgo"
+	"github.com/ceres-ventures/sage/internal/blockchain"
 	"github.com/rs/zerolog/log"
 )
 
 type (
 	Sage struct {
-		db             *Database
-		discordSession *discordgo.Session
-		ctx            context.Context
+		db                *Database
+		blockChainManager *blockchain.Manager
+		discordSession    *discordgo.Session
+		ctx               context.Context
 	}
 	Database struct{}
 )
@@ -30,6 +32,15 @@ func InitSage() *Sage {
 		return nil
 	}
 	s.discordSession = dgo
+
+	m, e := blockchain.NewManager()
+
+	if e != nil {
+		log.Error().Msg(err.Error())
+		return nil
+	}
+
+	s.blockChainManager = m
 
 	s.discordSession.AddHandler(s.handle)
 
