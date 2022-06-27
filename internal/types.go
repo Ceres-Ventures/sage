@@ -9,6 +9,7 @@ import (
 	"github.com/Entrio/subenv"
 	"github.com/bwmarrin/discordgo"
 	"github.com/ceres-ventures/sage/internal/blockchain"
+	"github.com/ceres-ventures/sage/internal/blockchain/models"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,14 +19,19 @@ type (
 		blockChainManager *blockchain.Manager
 		discordSession    *discordgo.Session
 		ctx               context.Context
+		updateChan        chan models.ChainUpdate
+		quitChan          chan bool
 	}
-	Database struct{}
 )
 
 func InitSage() *Sage {
 	log.Debug().Msg("calling InitSage()")
+	uc := make(chan models.ChainUpdate, 50)
 	s := &Sage{
-		ctx: context.Background(),
+		db:         newDatabase(),
+		ctx:        context.Background(),
+		updateChan: uc,
+		quitChan:   make(chan bool, 1),
 	}
 	log.Info().Str("version", s.GetVersion()).Msg("Sage initializing")
 	dgo, err := initDiscord(subenv.Env("BOT_TOKEN", ""))
@@ -55,8 +61,8 @@ func InitSage() *Sage {
 		return nil
 	}
 
+	m.SetUpdateChan(uc)
 	s.blockChainManager = m
-
 	s.discordSession.AddHandler(s.handle)
 
 	return s

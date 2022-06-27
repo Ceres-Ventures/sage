@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"bytes"
 	_ "embed"
+	"fmt"
+	"html/template"
 	"regexp"
 	"strings"
 
@@ -27,6 +30,8 @@ func (s *Sage) handle(sess *discordgo.Session, msg *discordgo.MessageCreate) {
 			log.Debug().Interface("args", args).Str("cmd", cmd).Msg("processing command")
 			_ = sendReaction(s.discordSession, msg, "⚙️")
 			switch cmd {
+			case "status":
+				sendStatus(s, sess, msg)
 			case "help":
 				sendHelp(sess, msg)
 			default:
@@ -66,6 +71,12 @@ func replyToMessage(s *discordgo.Session, m *discordgo.MessageCreate, msg string
 	}
 }
 
+func sendError(s *discordgo.Session, m *discordgo.MessageCreate, msg string) {
+	_ = sendReaction(s, m, "❌")
+
+	replyToMessage(s, m, fmt.Sprintf("---> **Sage has experienced a mental fart.** <---\nHere are the details:\n\n\t`%s`\n\n", msg))
+}
+
 func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, msg string) error {
 	log.Debug().Msg("Calling sendMessage")
 	if m.Author.Bot {
@@ -84,10 +95,33 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, msg string) e
 	return nil
 }
 
+//go:embed status.md
+var status string
+
 //go:embed help.md
 var help string
 
 func sendHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	log.Debug().Msg("Calling sendHelp")
 	replyToMessage(s, m, help)
+}
+
+func sendStatus(sage *Sage, s *discordgo.Session, m *discordgo.MessageCreate) {
+	log.Debug().Msg("Calling sendStatus")
+
+	t, err := template.New("status").Parse(status)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to parse template")
+		sendError(s, m, err.Error())
+		return
+	}
+
+	var tpl bytes.Buffer
+	err = t.Execute(&tpl, sage.blockChainManager.GetChains())
+	if err != nil {
+		log.Error().Err(err).Msg("failed to execute template")
+		sendError(s, m, err.Error())
+		return
+	}
+	replyToMessage(s, m, tpl.String())
 }
