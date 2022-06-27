@@ -10,9 +10,10 @@ import (
 type (
 	Chains []Chain
 	Chain  struct {
-		ID  string   `json:"chain-id"`
-		RPC []string `json:"rpc"`
-		LCD []string `json:"lcd"`
+		ID          string   `json:"chain-id"`
+		RPC         []string `json:"rpc"`
+		LCD         []string `json:"lcd"`
+		LatestBlock string
 	}
 	// Manager makes sure that all blockchain requests are executed accordingly. It controls the jobs, requests and data
 	Manager struct {

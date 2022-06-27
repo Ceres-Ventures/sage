@@ -117,7 +117,14 @@ func sendStatus(sage *Sage, s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	var tpl bytes.Buffer
-	err = t.Execute(&tpl, sage.blockChainManager.GetChains())
+	chains := sage.blockChainManager.GetChains()
+
+	for i, c := range chains {
+		bh := sage.db.GetLatestBlock(c.ID)
+		chains[i].LatestBlock = bh
+	}
+
+	err = t.Execute(&tpl, chains)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to execute template")
 		sendError(s, m, err.Error())

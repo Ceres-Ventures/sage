@@ -29,17 +29,25 @@ func (d *Database) updateChainData(chain string, field models.UpdateField, value
 	log.Debug().Msg("Calling Database.updateChainData")
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
-	val, ok := d.data[chain]
-	if !ok {
-		log.Debug().Str("chain", chain).Msg("Creating data key")
-		d.data[chain] = chainData{}
-		val = d.data[chain]
-	}
 
 	switch field {
 	case models.FRPCStatusResponse:
 		log.Debug().Str("chain", chain).Msg("Updating RPCStatusResponse")
 		v := value.(*models.RPCStatusResponse)
-		val.info = v
+		d.data[chain] = chainData{
+			info: v,
+		}
 	}
+}
+
+func (d *Database) GetLatestBlock(chain string) string {
+	log.Debug().Str("chain", chain).Msg("Calling Database.GetLatestBlock")
+	for k, v := range d.data {
+		log.Debug().Str("key", k).Str("chain", chain).Msg("....comparing")
+		if k == chain {
+			log.Debug().Str("key", k).Str("chain", chain).Msg("........match!")
+			return v.info.Result.SyncInfo.LatestBlockHeight
+		}
+	}
+	return "N/A"
 }
