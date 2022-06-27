@@ -1,17 +1,75 @@
 package blockchain
 
-import "github.com/rs/zerolog/log"
-
-type (
-	Manager    struct{}
-	Dispatcher struct{}
-	Job        struct{}
-	Worker     struct{}
+import (
+	"github.com/rs/zerolog/log"
 )
 
-func NewManager() (*Manager, error) {
+type (
+	Chains []Chain
+	Chain  struct {
+		ID  string   `json:"chain-id"`
+		RPC []string `json:"rpc"`
+		LCD []string `json:"lcd"`
+	}
+	// Manager makes sure that all blockchain requests are executed accordingly. It controls the jobs, requests and data
+	Manager struct {
+		jobCounter uint64
+		dispatcher *Dispatcher
+	}
+
+	// Dispatcher gets new jobs and passes them onto works. It also initializes new workers when needed
+	Dispatcher struct {
+		manager *Manager
+		workers map[string]*Worker
+	}
+
+	// Worker gets the job and performs job tasks
+	Worker struct {
+		dispatcher *Dispatcher
+		id         uint64
+		chain      *Chain
+	}
+
+	// Job encapsulates job description and instructions to perform
+	Job struct {
+		worker *Worker
+		id     uint64
+	}
+)
+
+func NewManager(chains *Chains) (*Manager, error) {
 	log.Debug().Msg("Calling blockchain.NewManager")
+
+	log.Debug().Msg("Creating new manager")
 	m := &Manager{}
+
+	log.Debug().Msg("Creating new dispatcher")
+	m.dispatcher = &Dispatcher{
+		manager: m,
+		workers: make(map[string]*Worker, 0),
+	}
+
+	log.Debug().Msg("Creating chain workers")
+	if len(*chains) == 0 {
+		log.Warn().Msg("No chains were provided during manager init, starting with 0 workers")
+	}
+	// Create a worker for each chain
+	for _, c := range *chains {
+		log.Debug().Str("chain", c.ID).Msg("Creating worker")
+		if len(c.LCD) == 0 {
+			// We have no LCD endpoints
+			log.Warn().Str("chain", c.ID).Msg("Chain has no LCD endpoints")
+		}
+		if len(c.RPC) == 0 {
+			// We have no RPC endpoints
+			log.Warn().Str("chain", c.ID).Msg("Chain has no RPC endpoints")
+		}
+		m.dispatcher.workers[c.ID] = &Worker{
+			dispatcher: m.dispatcher,
+			chain:      &c,
+		}
+	}
+
 	return m, nil
 }
 func (m *Manager) Start() {

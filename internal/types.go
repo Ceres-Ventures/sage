@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/Entrio/subenv"
 	"github.com/bwmarrin/discordgo"
@@ -33,7 +35,20 @@ func InitSage() *Sage {
 	}
 	s.discordSession = dgo
 
-	m, e := blockchain.NewManager()
+	// e chains from data
+	file, err := ioutil.ReadFile(subenv.Env("CHAINS_FILE", "./chains.json"))
+	chains := &blockchain.Chains{}
+	if err != nil {
+		log.Warn().Err(err).Msg("Couldn't read chains.json")
+	} else {
+		log.Info().Str("chains", subenv.Env("CHAINS_FILE", "./chains.json")).Msg("Loading chains file")
+		err = json.Unmarshal(file, chains)
+		if err != nil {
+			log.Warn().Err(err).Msg("Could not parse chains file")
+		}
+	}
+
+	m, e := blockchain.NewManager(chains)
 
 	if e != nil {
 		log.Error().Msg(err.Error())

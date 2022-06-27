@@ -1,0 +1,20 @@
+[
+  {
+    "chain-id": "galileo-2",
+    "rpc": [
+      "https://rpc-andromeda-testnet.cereslabs.io/"
+    ],
+    "lcd": [
+      "https://lcd-andromeda-testnet.cereslabs.io/"
+    ]
+  },
+  {
+    "chain-id": "harpoon-4",
+    "rpc": [
+      "https://rpc-kujira-testnet.wildsage.io/"
+    ],
+    "lcd": [
+      "https://lcd-kujira-testnet.wildsage.io/"
+    ]
+  }
+]
